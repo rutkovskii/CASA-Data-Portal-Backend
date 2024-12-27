@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  checker:
+    container_name: checker
+    platform: linux/arm64 
+    build:
+      context: ./checker
+      dockerfile: Dockerfile
+    volumes:
+      # - ./checker:/app  # Mount current directory for local development
+      - uv-cache:/root/.cache/uv  # Cache UV packages
+      - ./database:/app/database  # Mount database module
+      - ./static:/app/static  # Mount static folder
+      - ./shared:/app/shared  # Add shared utilities
+      - ./logs:/logs         # Add logs volume
+
+    environment:
+      - PYTHONUNBUFFERED=1  # Ensures Python output is sent straight to terminal
+      - UV_COMPILE_BYTECODE=1
+      - UV_LINK_MODE=copy
+      - TZ=America/New_York
+      - SQLALCHEMY_DATABASE_URL=postgresql+asyncpg://admin:root@postgres:5432/casa_data_portal
+
+    networks:
+      - app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./checker
+          target: /app
+        - action: rebuild
+          path: ./checker/pyproject.toml
+
+  postgres:
+    container_name: container-pg
+    image: postgres:17.2-alpine
+    hostname: localhost
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: casa_data_portal
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./config/database_schema.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d casa_data_portal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+    develop:
+      watch:
+        - action: sync
+          path: ./config
+          target: /docker-entrypoint-initdb.d
+
+  db-init:
+    build: 
+      context: ./database
+      dockerfile: Dockerfile
+    container_name: db-initializer
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://admin:root@postgres:5432/casa_data_portal"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "python", "health_check.py"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    develop:
+      watch:
+        - action: rebuild
+          path: ./database
+          target: /app
+
+  pgadmin:
+    container_name: container-pgadmin
+    image: dpage/pgadmin4
+    depends_on:
+      - postgres
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False" # Disable master password
+      PGADMIN_CONFIG_SERVER_MODE: "False"               # Disable server mode
+    volumes:
+      - ./config/servers.json:/pgadmin4/servers.json
+    restart: unless-stopped
+    networks:
+      - app-network
+
+volumes:
+  uv-cache:  # Persistent cache for UV packages
+  postgres-data:
+  logs:
+    driver: local
+
+networks:
+  app-network:

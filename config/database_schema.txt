@@ -1,0 +1,7 @@
+-- -- Create table for noaa files
+-- CREATE TABLE noaa_files (
+--     id SERIAL PRIMARY KEY,
+--     file_name VARCHAR(255) NOT NULL,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+--     last_modified TIMESTAMP
+-- );

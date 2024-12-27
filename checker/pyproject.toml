@@ -1,0 +1,19 @@
+[project]
+name = "checker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "asyncpg>=0.30.0",
+    "beautifulsoup4>=4.12.3",
+    "greenlet>=3.1.1",
+    "pydantic>=2.10.4",
+    "requests>=2.32.3",
+    "sqlalchemy>=2.0.36",
+    "watchfiles>=1.0.3",
+]
+
+[tool.black]
+line-length = 88
+skip-string-normalization = true
