@@ -19,7 +19,7 @@ services:
       - PYTHONUNBUFFERED=1  # Ensures Python output is sent straight to terminal
       - UV_COMPILE_BYTECODE=1
       - UV_LINK_MODE=copy
-      - TZ=America/New_York
+      - TZ=America/Chicago
       - SQLALCHEMY_DATABASE_URL=postgresql+asyncpg://admin:root@postgres:5432/casa_data_portal
 
     networks:
@@ -35,6 +35,37 @@ services:
         - action: rebuild
           path: ./checker/pyproject.toml
 
+
+  # uploader:
+  #   container_name: uploader
+  #   platform: linux/arm64 
+  #   build:
+  #     context: ./uploader
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - ./uploader:/app
+  #     - ./logs:/logs
+  #     - ./shared:/app/shared
+  #     - ./database:/app/database
+  #   environment:
+  #     - PYTHONUNBUFFERED=1  # Ensures Python output is sent straight to terminal
+  #     - UV_COMPILE_BYTECODE=1
+  #     - UV_LINK_MODE=copy
+  #     - TZ=America/Chicago
+  #     - SQLALCHEMY_DATABASE_URL=postgresql+asyncpg://admin:root@postgres:5432/casa_data_portal
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - app-network
+  #   develop:
+  #     watch:
+  #       - action: sync
+  #         path: ./uploader
+  #         target: /app
+  #       - action: rebuild
+  #         path: ./uploader/pyproject.toml
+
   postgres:
     container_name: container-pg
     image: postgres:17.2-alpine
@@ -45,6 +76,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: root
       POSTGRES_DB: casa_data_portal
+      TZ: America/Chicago
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./config/database_schema.sql:/docker-entrypoint-initdb.d/init.sql
@@ -70,6 +102,7 @@ services:
     container_name: db-initializer
     environment:
       DATABASE_URL: "postgresql+asyncpg://admin:root@postgres:5432/casa_data_portal"
+      TZ: America/Chicago
     depends_on:
       postgres:
         condition: service_healthy
@@ -99,6 +132,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: root
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False" # Disable master password
       PGADMIN_CONFIG_SERVER_MODE: "False"               # Disable server mode
+      TZ: America/Chicago
     volumes:
       - ./config/servers.json:/pgadmin4/servers.json
     restart: unless-stopped

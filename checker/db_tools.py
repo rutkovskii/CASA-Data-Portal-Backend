@@ -5,6 +5,7 @@ from typing import Optional, List
 import asyncio
 import os
 import traceback
+from pprint import pprint
 
 # Third-party imports
 from pydantic import BaseModel
@@ -18,7 +19,7 @@ from shared.logger_config import setup_logger
 
 
 # Logging setup
-logger = setup_logger('checker', 'db_tools')
+logger = setup_logger("checker", "db_tools")
 
 # Get database URL
 DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
@@ -59,6 +60,28 @@ class NoaaEventDTO(BaseModel):
     date_time_end: datetime
     status: EventStatus = EventStatus.UNMAPPED
 
+    # Location fields
+    begin_lat: Optional[float] = None
+    begin_lon: Optional[float] = None
+    end_lat: Optional[float] = None
+    end_lon: Optional[float] = None
+    county: str = "UNKNOWN"
+    begin_city: Optional[str] = None
+    end_city: Optional[str] = None
+
+    # Impact fields
+    magnitude: Optional[str] = None
+    damage_property: int = 0
+    damage_crops: int = 0
+    deaths_direct: int = 0
+    deaths_indirect: int = 0
+    injuries_direct: int = 0
+    injuries_indirect: int = 0
+
+    # Description fields
+    event_narrative: Optional[str] = None
+    episode_narrative: Optional[str] = None
+
 
 async def test_connection():
     async with session_scope() as s:
@@ -72,8 +95,7 @@ async def post_noaa_record(noaa_record: NoaaRecordDTO):
     """Create and return a new NOAA record"""
     async with session_scope() as s:
         db_noaa_record = NoaaRecord(
-            file_year=noaa_record.file_year, 
-            last_modified=noaa_record.last_modified
+            file_year=noaa_record.file_year, last_modified=noaa_record.last_modified
         )
         s.add(db_noaa_record)
         await s.commit()
@@ -84,7 +106,9 @@ async def post_noaa_record(noaa_record: NoaaRecordDTO):
 async def post_noaa_records(noaa_records: List[NoaaRecordDTO]):
     async with session_scope() as s:
         db_noaa_records = [
-            NoaaRecord(file_year=noaa_record.file_year, last_modified=noaa_record.last_modified)
+            NoaaRecord(
+                file_year=noaa_record.file_year, last_modified=noaa_record.last_modified
+            )
             for noaa_record in noaa_records
         ]
         s.add_all(db_noaa_records)
@@ -137,7 +161,7 @@ async def post_noaa_event(event: NoaaEventDTO):
             product=event.product,
             date_time_start=event.date_time_start,
             date_time_end=event.date_time_end,
-            status=event.status
+            status=event.status,
         )
         s.add(db_event)
         await s.commit()
@@ -153,15 +177,35 @@ async def post_noaa_events(events: List[NoaaEventDTO]):
                 product=event.product,
                 date_time_start=event.date_time_start,
                 date_time_end=event.date_time_end,
-                status=event.status
+                status=event.status,
+                # Location fields
+                begin_lat=event.begin_lat,
+                begin_lon=event.begin_lon,
+                end_lat=event.end_lat,
+                end_lon=event.end_lon,
+                county=event.county,
+                begin_city=event.begin_city,
+                end_city=event.end_city,
+                # Impact fields
+                magnitude=event.magnitude,
+                damage_property=event.damage_property,
+                damage_crops=event.damage_crops,
+                deaths_direct=event.deaths_direct,
+                deaths_indirect=event.deaths_indirect,
+                injuries_direct=event.injuries_direct,
+                injuries_indirect=event.injuries_indirect,
+                # Description fields
+                event_narrative=event.event_narrative,
+                episode_narrative=event.episode_narrative,
             )
             for event in events
         ]
         s.add_all(db_events)
         await s.commit()
         return db_events
-    
-#clean noaa_records table and noaa_events table
+
+
+# clean noaa_records table and noaa_events table
 async def clean_noaa_tables():
     """Clean both noaa_events and noaa_records tables in the correct order"""
     async with session_scope() as s:
@@ -172,6 +216,16 @@ async def clean_noaa_tables():
         await s.commit()
 
 
+async def print_noaa_event_columns():
+    """Print the column names of the noaa_events table"""
+    async with session_scope() as s:
+        result = await s.execute(text("SELECT * FROM noaa_events LIMIT 0"))
+        pprint([desc for desc in result.keys()])
+
+
 if __name__ == "__main__":
     # asyncio.run(test_connection())
-    asyncio.run(clean_noaa_tables())
+    # Print columns of noaa_events table
+    asyncio.run(print_noaa_event_columns())
+    # asyncio.run(clean_noaa_tables())
+
