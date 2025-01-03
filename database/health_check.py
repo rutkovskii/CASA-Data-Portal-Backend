@@ -2,6 +2,7 @@ import asyncio
 from database import engine
 from sqlalchemy import text
 
+
 async def check_db():
     try:
         async with engine.connect() as conn:
@@ -13,6 +14,7 @@ async def check_db():
         print(f"Database connection failed: {e}")
         return False
 
+
 if __name__ == "__main__":
     success = asyncio.run(check_db())
-    exit(0 if success else 1) 
+    exit(0 if success else 1)

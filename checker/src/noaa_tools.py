@@ -1,9 +1,10 @@
 """Helper functions for processing NOAA weather event data"""
 
+import os
 from datetime import datetime
 from typing import Dict
 
-from db_tools import NoaaEventDTO
+from src.db_tools import NoaaEventDTO
 from database.models import EventStatus
 
 
@@ -95,3 +96,20 @@ def extract_event_from_row(row: Dict, record_id: int) -> NoaaEventDTO:
         event_narrative=row["EVENT_NARRATIVE"],
         episode_narrative=row["EPISODE_NARRATIVE"],
     )
+
+
+# Example of received data from NOAA
+links_example = [
+    "StormEvents_details-ftp_v1.0_d2016_c20220719.csv.gz",
+    "StormEvents_details-ftp_v1.0_d2017_c20230317.csv.gz",
+    "StormEvents_details-ftp_v1.0_d2018_c20240716.csv.gz",
+    "StormEvents_details-ftp_v1.0_d2019_c20240117.csv.gz",
+    "StormEvents_details-ftp_v1.0_d2020_c20240620.csv.gz",
+    "StormEvents_details-ftp_v1.0_d2021_c20240716.csv.gz",
+    "StormEvents_details-ftp_v1.0_d2022_c20241121.csv.gz",
+    "StormEvents_details-ftp_v1.0_d2023_c20241216.csv.gz",
+    "StormEvents_details-ftp_v1.0_d2024_c20241216.csv.gz",
+]
+
+# iterate through static folder, and get all .csv files
+links_example_2 = [file for file in os.listdir("static") if file.endswith(".csv")]

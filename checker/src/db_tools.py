@@ -228,4 +228,3 @@ if __name__ == "__main__":
     # Print columns of noaa_events table
     asyncio.run(print_noaa_event_columns())
     # asyncio.run(clean_noaa_tables())
-
