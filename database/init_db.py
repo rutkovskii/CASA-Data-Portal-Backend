@@ -2,6 +2,7 @@ import asyncio
 import sys
 from database import init_db
 
+
 async def create_tables():
     try:
         print("Initializing database tables...")
@@ -10,6 +11,7 @@ async def create_tables():
     except Exception as e:
         print(f"Error creating tables: {e}")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     asyncio.run(create_tables())

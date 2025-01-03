@@ -12,12 +12,12 @@ logger = logging.getLogger(__name__)
 
 # Get database URL from environment variable
 DATABASE_URI = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://admin:root@localhost:5432/casa_data_portal"
+    "DATABASE_URL", "postgresql+asyncpg://admin:root@localhost:5432/casa_data_portal"
 )
 
 engine = create_async_engine(DATABASE_URI, echo=True)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
 
 async def init_db():
     try:
@@ -29,6 +29,7 @@ async def init_db():
         logger.error(f"Database initialization failed: {e}")
         raise
 
+
 @asynccontextmanager
 async def session_scope():
     async with async_session() as session:
@@ -39,4 +40,3 @@ async def session_scope():
             await session.rollback()
             logger.error(f"Session error: {e}")
             raise
-        

@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from src.db_check import check_database
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -8,9 +7,6 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    # Initial database check
-    await check_database()
-
     logger.info("Container is now active and ready for commands...")
 
     try:

@@ -4,29 +4,27 @@ import csv
 import datetime as dt
 import gzip
 import os
-from pprint import pprint
-from typing import Dict, List, Tuple
+from typing import Dict, List
 import traceback
 
 # Third-party imports
-import requests
 from bs4 import BeautifulSoup
 import aiohttp
 import aiofiles
 
 # Local imports
-from db_tools import (
+from src.db_tools import (
     get_noaa_records,
     post_noaa_record,
     post_noaa_events,
     NoaaEventDTO,
     NoaaRecordDTO,
 )
-from events_magnitudes import (
+from src.events_magnitudes import (
     countieslist,
     storm_types_sorted,
 )
-from noaa_tools import extract_event_from_row
+from src.noaa_tools import extract_event_from_row
 from database.models import EventStatus
 from shared.logger_config import setup_logger
 
@@ -38,22 +36,6 @@ years = [str(i) for i in range(2016, dt.date.today().year + 1)]
 
 # Flag to use local files instead of fetching from NOAA
 USE_LOCAL_FILES = False
-
-# Example of received data from NOAA
-links_example = [
-    "StormEvents_details-ftp_v1.0_d2016_c20220719.csv.gz",
-    "StormEvents_details-ftp_v1.0_d2017_c20230317.csv.gz",
-    "StormEvents_details-ftp_v1.0_d2018_c20240716.csv.gz",
-    "StormEvents_details-ftp_v1.0_d2019_c20240117.csv.gz",
-    "StormEvents_details-ftp_v1.0_d2020_c20240620.csv.gz",
-    "StormEvents_details-ftp_v1.0_d2021_c20240716.csv.gz",
-    "StormEvents_details-ftp_v1.0_d2022_c20241121.csv.gz",
-    "StormEvents_details-ftp_v1.0_d2023_c20241216.csv.gz",
-    "StormEvents_details-ftp_v1.0_d2024_c20241216.csv.gz",
-]
-
-# iterate through static folder, and get all .csv files
-links_example_2 = [file for file in os.listdir("static") if file.endswith(".csv")]
 
 
 def parse_noaa_csv(content: str, record_id: int) -> List[NoaaEventDTO]:
@@ -95,7 +77,9 @@ async def process_noaa_file(file_name: str, record_id: int) -> List[NoaaEventDTO
             async with aiofiles.open(file_path, "r") as f:
                 content = await f.read()
     else:
-        url = f"https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/{file_name}"
+        url = (
+            f"https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/{file_name}"
+        )
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 content = await response.read()
