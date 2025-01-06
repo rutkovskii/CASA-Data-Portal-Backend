@@ -1,0 +1,10 @@
+{
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/checker/src",
+        "${workspaceFolder}/uploader/src",
+        "${workspaceFolder}/kerchunker/src",
+        "${workspaceFolder}/shared/",
+    ],
+    "python.defaultInterpreterPath": "/opt/homebrew/Caskroom/miniforge/base/bin/python3"
+}
+

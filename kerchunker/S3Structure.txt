@@ -1,0 +1,11 @@
+NetCDF Files:
+<product>/<date>/<date>_<time>.nc
+<product>/<radar-code>/<date>/<date>_<time>.nc
+
+Reference Files:
+ref_files/<product>/<date>/<date>_<time>.json
+ref_files/<product>/<radar-code>/<date>/<date>_<time>.json
+
+Dataset-Level and Event-Level Reference Files:
+ref_files/<product>/datasets/<dataset_id>.json
+ref_files/<product>/events/<event_id>.json

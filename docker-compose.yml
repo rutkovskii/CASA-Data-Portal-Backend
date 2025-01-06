@@ -56,8 +56,42 @@ services:
         - action: sync
           path: ./uploader
           target: /app
+        - action: sync
+          path: ./uploader/src
+          target: /app/src
         - action: rebuild
           path: ./uploader/pyproject.toml
+
+  kerchunker:
+    container_name: kerchunker
+    build:
+      context: ./kerchunker
+      dockerfile: Dockerfile
+    volumes:
+      - ./logs:/logs
+      - ./shared:/app/src/shared
+      - ./database:/app/src/database
+      - ./config:/app/src/config
+
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=America/Chicago
+      - SQLALCHEMY_DATABASE_URL=postgresql+asyncpg://admin:root@postgres:5432/casa_data_portal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    develop:
+      watch:
+        - action: sync
+          path: ./kerchunker
+          target: /app
+        - action: sync
+          path: ./kerchunker/src
+          target: /app/src
+        - action: rebuild
+          path: ./kerchunker/pyproject.toml
 
   postgres:
     container_name: container-pg
@@ -72,7 +106,6 @@ services:
       TZ: America/Chicago
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      # - ./config/database_schema.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
     networks:
       - app-network

@@ -15,8 +15,12 @@ DATABASE_URI = os.getenv(
     "DATABASE_URL", "postgresql+asyncpg://admin:root@localhost:5432/casa_data_portal"
 )
 
-engine = create_async_engine(DATABASE_URI, echo=True)
-async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+# Adjust the connection pool settings
+engine = create_async_engine(
+    DATABASE_URI,
+    echo=False,
+)
+async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def init_db():

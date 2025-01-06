@@ -1,8 +1,9 @@
 import os
-import xarray as xr
-from datetime import datetime
 import gzip
-import io
+from datetime import datetime
+import traceback
+
+import xarray as xr
 
 
 def parse_file_datetime(filename, product=None):
@@ -18,7 +19,12 @@ def parse_file_datetime(filename, product=None):
         if product == "hail":
             return datetime.strptime(filename, "COMPOSITE_%Y%m%d-%H%M%S.nc")
         elif product == "rainfall":
-            return datetime.strptime(filename, "%Y%m%d_%H%M%S.nc.gz")
+            return datetime.strptime(
+                filename,
+                "%Y%m%d_%H%M%S.nc.gz"
+                if filename.endswith(".gz")
+                else "%Y%m%d_%H%M%S.nc",
+            )
         elif product == "singleradar":
             filename_split = filename.split(".")
             return datetime.strptime(filename_split[1], "tx-%Y%m%d-%H%M%S")
@@ -30,12 +36,10 @@ def parse_file_datetime(filename, product=None):
             dt_str = f"{date_str}{time_str}"
             return datetime.strptime(dt_str, "%Y%m%d%H%M%S")
     except ValueError:
+        traceback.print_exc()
+        print(f"Failed to parse datetime from filename: {filename}")
+
         return None
-
-
-def open_gzipped_netcdf(gz_path):
-    with gzip.open(gz_path, "rb") as f:
-        return xr.open_dataset(io.BytesIO(f.read()))
 
 
 def unzip_inplace(gz_path):
