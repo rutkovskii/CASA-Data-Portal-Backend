@@ -181,7 +181,9 @@ class NcFile(Base):
     __tablename__ = "nc_files"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    s3_path: Mapped[str] = mapped_column(String, nullable=False)
+    s3_path: Mapped[str] = mapped_column(
+        String, nullable=False, unique=True, index=True
+    )
     date_time: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
     product: Mapped[str] = mapped_column(String, nullable=False)
 
@@ -189,7 +191,7 @@ class NcFile(Base):
     event_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("noaa_events.id"), nullable=True
     )
-    reference_file_id: Mapped[Optional[int]] = mapped_column(
+    ref_file_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("individual_reference_files.id"), nullable=True
     )
 
@@ -207,7 +209,9 @@ class IndividualRefFile(Base):
     __tablename__ = "individual_reference_files"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    s3_path: Mapped[str] = mapped_column(String, nullable=False)
+    s3_path: Mapped[str] = mapped_column(
+        String, nullable=False, unique=True, index=True
+    )
     date_time: Mapped[DateTime] = mapped_column(DateTime, nullable=False)
     product: Mapped[str] = mapped_column(String, nullable=False)
 
@@ -215,10 +219,13 @@ class IndividualRefFile(Base):
     event_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("noaa_events.id"), nullable=True
     )
+    nc_file_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("nc_files.id"), nullable=True
+    )
 
     # Relationships
     event: Mapped[Optional["NoaaEvent"]] = relationship(back_populates="ref_files")
-    nc_files: Mapped[list["NcFile"]] = relationship(back_populates="ref_file")
+    nc_file: Mapped[Optional["NcFile"]] = relationship(back_populates="ref_file")
     combined_refs: Mapped[Optional[list["CombinedRefFile"]]] = relationship(
         secondary="combined_ref_2_individual_refs", back_populates="ref_files"
     )

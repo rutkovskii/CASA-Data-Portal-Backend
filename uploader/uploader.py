@@ -5,7 +5,6 @@ import asyncio
 from datetime import datetime, timedelta
 
 import pysftp
-from boto3.s3.transfer import TransferConfig
 
 from src.uploader_tools import (
     get_product_base_path,
@@ -22,8 +21,8 @@ from src.db_tools import (
     log_failed_upload,
     post_nc_file,
 )
-from src.s3_tools.S3Manager import S3Manager
-from src.s3_tools.S3Tools import add_time_dimension
+from src.shared.S3Manager import S3Manager, get_transfer_config
+from src.shared.tools import add_time_dimension, parse_file_datetime
 from src.config.config import Config
 from src.shared.logger_config import setup_logger
 
@@ -31,31 +30,22 @@ from src.shared.logger_config import setup_logger
 logger = setup_logger("uploader", "uploader", append=False)
 
 
-def get_transfer_config():
-    return TransferConfig(
-        multipart_threshold=8 * 1024 * 1024,  # 8MB - minimum size for multipart upload
-        max_concurrency=10,
-        multipart_chunksize=8 * 1024 * 1024,  # 8MB per chunk
-        use_threads=True,
-    )
-
-
 def get_mgh5_connection():
     cnopts = pysftp.CnOpts()
     cnopts.hostkeys = None
     return pysftp.Connection(
         host=Config.MGH5_HOST,
-        username="kmclaughlin",
-        password="Jt6u!m8X7",
+        username=Config.MGH5_K_USER,
+        password=Config.MGH5_K_PASSWORD,
         cnopts=cnopts,
     )
 
 
 async def get_s3_manager():
     s3_manager = S3Manager(
-        endpoint=Config.ENDPOINT,
-        access_key=Config.ACCESS_KEY,
-        secret_key=Config.SECRET_KEY,
+        endpoint=Config.S3_ENDPOINT_URL,
+        access_key=Config.S3_ACCESS_KEY,
+        secret_key=Config.S3_SECRET_KEY,
     )
     await s3_manager.initialize()
     return s3_manager
@@ -103,14 +93,14 @@ async def upload_file(
             s3_key = os.path.join(s3_prefix, filename.replace(".gz", ""))
             await s3_manager.upload_file_async(
                 temp_file,
-                Config.BUCKET_NAME,
+                Config.S3_BUCKET_NAME,
                 s3_key,
                 transfer_config=get_transfer_config(),
             )
 
             nc_file = NcFileDTO(
                 s3_path=s3_key,
-                date_time=datetime.now(),
+                date_time=parse_file_datetime(filename, product),
                 product=product,
             )
             await post_nc_file(nc_file)

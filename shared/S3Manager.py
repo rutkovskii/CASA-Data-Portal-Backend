@@ -2,9 +2,8 @@ import os
 import aioboto3
 from botocore import UNSIGNED
 from botocore.config import Config as BotocoreConfig
-from src.s3_tools.S3Tools import add_time_dimension
+from boto3.s3.transfer import TransferConfig
 import aiofiles
-import shutil
 
 
 class S3Manager:
@@ -40,10 +39,6 @@ class S3Manager:
         if self.client:
             await self.client.__aexit__(None, None, None)
 
-    async def create_bucket(self, bucket_name):
-        await self.client.create_bucket(Bucket=bucket_name)
-        print(f"Bucket {bucket_name} created")
-
     async def upload_dir(self, bucket_name, directory):
         for root, dirs, files in os.walk(directory):
             for file in files:
@@ -51,39 +46,6 @@ class S3Manager:
                     os.path.join(root, file), bucket_name, f"{root}/{file}"
                 )
                 print(f"File {file} uploaded to bucket {bucket_name}")
-
-    async def upload_dir_time_dim(self, bucket_name, directory):
-        # Create a temporary directory for processed files
-        temp_dir = directory + "_temp"
-        os.makedirs(temp_dir, exist_ok=True)
-
-        try:
-            for root, dirs, files in os.walk(directory):
-                for file in files:
-                    local_file_path = os.path.join(root, file)
-                    temp_file = add_time_dimension(local_file_path, output_dir=temp_dir)
-                    s3_file_path = os.path.join(root, os.path.splitext(file)[0] + ".nc")
-
-                    async with aiofiles.open(temp_file, "rb") as file_obj:
-                        await self.client.upload_fileobj(
-                            file_obj, bucket_name, s3_file_path
-                        )
-                    print(
-                        f"File {file} uploaded to bucket {bucket_name} as {s3_file_path}"
-                    )
-        finally:
-            # Clean up the entire temporary directory at once
-            shutil.rmtree(temp_dir)
-
-    # async def upload_dir_time_dim(self, bucket_name, directory):
-    #     for root, dirs, files in os.walk(directory):
-    #         for file in files:
-    #             local_file_path = os.path.join(root, file)
-    #             temp_file = add_time_dimension(local_file_path)
-    #             s3_file_path = os.path.join(root, file)
-    #             await self.client.upload_file(temp_file, bucket_name, s3_file_path)
-    #             os.remove(temp_file)
-    #             print(f"File {file} uploaded to bucket {bucket_name}")
 
     async def list_files(self, bucket_name, folder=None):
         paginator = self.client.get_paginator("list_objects_v2")
@@ -158,6 +120,15 @@ class S3Manager:
         print(dirs)
 
         return dirs
+
+
+def get_transfer_config():
+    return TransferConfig(
+        multipart_threshold=8 * 1024 * 1024,  # 8MB - minimum size for multipart upload
+        max_concurrency=10,
+        multipart_chunksize=8 * 1024 * 1024,  # 8MB per chunk
+        use_threads=True,
+    )
 
 
 # Example usage:
