@@ -14,13 +14,12 @@ from src.uploader_tools import (
     calculate_days_in_range,
 )
 from src.db_tools import (
-    LastUploadedDateDTO,
-    FailedUploadDTO,
-    NcFileDTO,
     upsert_last_uploaded_date,
     log_failed_upload,
     post_nc_file,
 )
+
+from src.database.schemas import LastUploadedDateDTO, FailedUploadDTO, NcFileDTO
 from src.shared.S3Manager import S3Manager, get_transfer_config
 from src.shared.tools import add_time_dimension, parse_file_datetime
 from src.config.config import Config

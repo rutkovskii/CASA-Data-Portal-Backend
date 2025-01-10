@@ -8,9 +8,9 @@ services:
     volumes:
       # - ./checker:/app  # Mount current directory for local development
       - uv-cache:/root/.cache/uv  # Cache UV packages
-      - ./database:/app/database  # Mount database module
-      - ./static:/app/static  # Mount static folder
-      - ./shared:/app/shared  # Add shared utilities
+      - ./database:/app/src/database  # Mount database module
+      - ./static:/app/src/static  # Mount static folder
+      - ./shared:/app/src/shared  # Add shared utilities
       - ./logs:/logs         # Add logs volume
 
     environment:
@@ -61,6 +61,67 @@ services:
           target: /app/src
         - action: rebuild
           path: ./uploader/pyproject.toml
+
+  api:
+    container_name: api
+    platform: linux/arm64 
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    volumes:
+      - ./logs:/logs
+      - ./shared:/app/src/shared
+      - ./database:/app/src/database
+      - ./config:/app/src/config
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=America/Chicago
+      - SQLALCHEMY_DATABASE_URL=postgresql+asyncpg://admin:root@postgres:5432/casa_data_portal
+    networks:
+      - app-network
+    ports:
+      - "8000:80"  # Map port 8000 to 80
+    develop:
+      watch:
+        - action: sync
+          path: ./api
+          target: /app
+        - action: sync
+          path: ./api/src
+          target: /app/src
+        - action: rebuild
+          path: ./api/pyproject.toml
+
+  mapper:
+    container_name: mapper
+    platform: linux/arm64 
+    build:
+      context: ./mapper
+      dockerfile: Dockerfile
+    volumes:
+      - ./logs:/logs
+      - ./shared:/app/src/shared
+      - ./database:/app/src/database
+      - ./config:/app/src/config
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=America/Chicago
+      - SQLALCHEMY_DATABASE_URL=postgresql+asyncpg://admin:root@postgres:5432/casa_data_portal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    develop:
+      watch:
+        - action: sync
+          path: ./mapper
+          target: /app
+        - action: sync
+          path: ./mapper/src
+          target: /app/src
+        - action: rebuild
+          path: ./mapper/pyproject.toml
 
   kerchunker:
     container_name: kerchunker
@@ -145,25 +206,6 @@ services:
         - action: rebuild
           path: ./database
           target: /app
-
-  pgadmin:
-    container_name: container-pgadmin
-    image: dpage/pgadmin4
-    depends_on:
-      - postgres
-    ports:
-      - "5050:80"
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: root
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False" # Disable master password
-      PGADMIN_CONFIG_SERVER_MODE: "False"               # Disable server mode
-      TZ: America/Chicago
-    volumes:
-      - ./config/servers.json:/pgadmin4/servers.json
-    restart: unless-stopped
-    networks:
-      - app-network
 
 volumes:
   uv-cache:  # Persistent cache for UV packages

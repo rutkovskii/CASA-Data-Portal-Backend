@@ -11,13 +11,13 @@ from src.tools import create_s3fs_client
 from src.shared.tools import parse_file_datetime
 from src.config.config import Config
 from src.db_tools import (
-    IndividualRefFileDTO,
-    _upsert_nc_file_in_session,
-    _upsert_individual_ref_file_in_session,
+    upsert_nc_file_in_session,
+    upsert_individual_ref_file_in_session,
     session_scope,
-    NcFileDTO,
-    IndividualRefFileDTO,
 )
+
+from src.database.schemas import NcFileDTO, IndividualRefFileDTO
+
 
 # TODO: logging
 # TODOL Build a Single Multi-Row INSERT/UPSERT
@@ -62,7 +62,7 @@ def _sync_generate_json_reference(s3fs_client, s3_filepath):
     with s3fs_client.open(path, "wb") as f:
         f.write(ujson.dumps(reference).encode())
 
-    logger.info(f"Generated reference file for {s3_filepath}")
+    # logger.info(f"Generated reference file for {s3_filepath}")
 
     return (ref_filepath, s3_filepath)
 
@@ -103,9 +103,7 @@ async def batch_upsert_refs(
                         product=product,
                         reference_file_id=None,  # We'll update this later
                     )
-                    nc_result = await _upsert_nc_file_in_session(
-                        logger, session, nc_dto
-                    )
+                    nc_result = await upsert_nc_file_in_session(logger, session, nc_dto)
                     if not nc_result or not nc_result.id:
                         logger.warning(f"No nc_file ID returned for {nc_path}")
                         continue
@@ -119,7 +117,7 @@ async def batch_upsert_refs(
                         product=product,
                         nc_file_id=nc_file_id,  # Link to nc_file
                     )
-                    ref_result = await _upsert_individual_ref_file_in_session(
+                    ref_result = await upsert_individual_ref_file_in_session(
                         logger, session, ref_dto
                     )
                     if not ref_result or not ref_result.id:
@@ -128,7 +126,7 @@ async def batch_upsert_refs(
 
                     # 3. Finally, update the nc_file with reference_file_id
                     nc_dto.reference_file_id = ref_result.id
-                    await _upsert_nc_file_in_session(logger, session, nc_dto)
+                    await upsert_nc_file_in_session(logger, session, nc_dto)
 
                     logger.info(f"Processed {nc_path} -> {ref_path}")
 
