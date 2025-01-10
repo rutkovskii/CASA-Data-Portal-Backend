@@ -1,6 +1,6 @@
 from src.shared.tools import parse_file_datetime
-from src.db_tools import NcFileDTO, upsert_nc_file
-from src.config.config import Config
+from src.db_tools import upsert_nc_file
+from src.database.schemas import NcFileDTO
 
 
 async def add_nc_to_NcFile(logger, file):

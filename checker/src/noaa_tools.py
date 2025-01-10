@@ -4,8 +4,8 @@ import os
 from datetime import datetime
 from typing import Dict
 
-from src.db_tools import NoaaEventDTO
-from database.models import EventStatus
+from src.database.schemas import NoaaEventDTO
+from src.database.models import EventStatus
 
 
 def process_damage(damage_str: str) -> int:
@@ -71,8 +71,8 @@ def extract_event_from_row(row: Dict, record_id: int) -> NoaaEventDTO:
 
     return NoaaEventDTO(
         noaa_record_id=record_id,
-        event_id=row["EVENT_ID"],
-        product=row["EVENT_TYPE"],
+        event_id=int(row["EVENT_ID"]),
+        noaa_product=row["EVENT_TYPE"],
         date_time_start=parse_datetime(row["BEGIN_DATE_TIME"]),
         date_time_end=parse_datetime(row["END_DATE_TIME"]),
         status=EventStatus.UNMAPPED,
@@ -112,4 +112,4 @@ links_example = [
 ]
 
 # iterate through static folder, and get all .csv files
-links_example_2 = [file for file in os.listdir("static") if file.endswith(".csv")]
+links_example_2 = [file for file in os.listdir("src/static") if file.endswith(".csv")]

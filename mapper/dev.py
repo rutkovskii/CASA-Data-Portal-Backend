@@ -7,8 +7,6 @@ logger = logging.getLogger(__name__)
 
 
 async def main():
-    # Initial database check
-
     logger.info("Container is now active and ready for commands...")
 
     try:

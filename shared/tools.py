@@ -40,6 +40,39 @@ def parse_file_datetime(filename, product=None):
         print(f"Failed to parse datetime from filename: {filename}")
 
         return None
+    
+
+def parse_file_datetime_infer_simple(filename):
+    """
+    Simplified inference:
+      - if 'COMPOSITE_' in filename => hail pattern
+      - elif 'tx-' in filename => single radar pattern
+      - else => rainfall pattern (YYYYmmdd_HHMMSS.nc or .nc.gz)
+    """
+    base_name = os.path.basename(filename) # must remove the extension .json
+    base_name = base_name.removesuffix(".json")
+
+    try:
+        # 1) Hail pattern
+        #    "COMPOSITE_YYYYmmdd-HHMMSS"
+        if "COMPOSITE_" in base_name:
+            return datetime.strptime(base_name, "COMPOSITE_%Y%m%d-%H%M%S")
+
+        # 2) Single-radar pattern
+        #    e.g. "something.tx-YYYYmmdd-HHMMSS"
+        #    We'll split on "." and parse the second item
+        elif "tx-" in base_name:
+            filename_split = base_name.split(".")
+            return datetime.strptime(filename_split[1], "tx-%Y%m%d-%H%M%S")
+
+        # 3) Rainfall pattern (default fallback)
+        #    e.g. "YYYYmmdd_HHMMSS"
+        else:
+            return datetime.strptime(base_name, "%Y%m%d_%H%M%S")
+
+    except ValueError:
+        # If *all* attempts fail, return None
+        return None
 
 
 def unzip_inplace(gz_path):

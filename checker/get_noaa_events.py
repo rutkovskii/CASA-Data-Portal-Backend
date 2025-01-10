@@ -17,16 +17,15 @@ from src.db_tools import (
     get_noaa_records,
     post_noaa_record,
     post_noaa_events,
-    NoaaEventDTO,
-    NoaaRecordDTO,
 )
 from src.events_magnitudes import (
     countieslist,
     storm_types_sorted,
 )
 from src.noaa_tools import extract_event_from_row
-from database.models import EventStatus
-from shared.logger_config import setup_logger
+from src.database.models import EventStatus
+from src.database.schemas import NoaaEventDTO, NoaaRecordDTO
+from src.shared.logger_config import setup_logger
 
 # Initialize logger with service and component names
 logger = setup_logger("checker", "noaa")
@@ -185,7 +184,7 @@ async def check_noaa():
             logger.info("No existing records found - processing all files")
             await process_new_files(file_dates, year_files)
 
-            # TODO: Trigger mapper.py (it can just extracted unmapped events/modified events)
+            # TODO: Trigger mapper.py (it can extract unmapped events/modified events)
 
         # Handle modified files
         elif any(
@@ -207,7 +206,7 @@ async def check_noaa():
             #       - Add with status EventStatus.UNMAPPED
             #    f. Keep unchanged events as is
             # 3. Prepare dictionary of modified events for mapper:
-            #    {event_id: [product, date_time_start, date_time_end], ...}
+            #    {event_id: [noaa_product, date_time_start, date_time_end], ...}
             # 4. Trigger mapper.py with this dictionary
             pass
 
